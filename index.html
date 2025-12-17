@@ -2,59 +2,100 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>بوابة الأطباء الآمنة</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* --- THEME VARIABLES --- */
         :root {
+            /* Light Mode */
+            --bg-grad-start: #f0f9ff;
+            --bg-grad-end: #cbebff;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --input-bg: #f8fafc;
+            --input-border: #e2e8f0;
             --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --error: #ef4444;
+            --primary-hover: #1d4ed8;
+            --shape-color: rgba(37, 99, 235, 0.1);
+        }
+
+        [data-theme="dark"] {
+            /* Dark Mode */
+            --bg-grad-start: #0f172a;
+            --bg-grad-end: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.85);
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --input-bg: #334155;
+            --input-border: #475569;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --shape-color: rgba(59, 130, 246, 0.1);
         }
 
         body {
             font-family: 'Tajawal', sans-serif;
-            background: linear-gradient(135deg, #f0f9ff 0%, #cbebff 100%);
+            background: linear-gradient(135deg, var(--bg-grad-start) 0%, var(--bg-grad-end) 100%);
             margin: 0;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            transition: background 0.5s;
         }
 
         /* Abstract Background Shapes */
         .bg-shape {
             position: absolute;
-            background: rgba(37, 99, 235, 0.1);
+            background: var(--shape-color);
             border-radius: 50%;
             z-index: -1;
+            transition: background 0.5s;
         }
         .shape-1 { width: 400px; height: 400px; top: -100px; right: -100px; }
-        .shape-2 { width: 300px; height: 300px; bottom: -50px; left: -50px; background: rgba(16, 185, 129, 0.1); }
+        .shape-2 { width: 300px; height: 300px; bottom: -50px; left: -50px; }
 
+        /* Login Card */
         .login-card {
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--card-bg);
             padding: 50px 40px;
             border-radius: 24px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
             text-align: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
             transform: translateY(20px);
             opacity: 0;
             animation: slideUp 0.6s ease-out forwards;
+            position: relative;
+            transition: background 0.3s;
         }
 
-        @keyframes slideUp {
-            to { transform: translateY(0); opacity: 1; }
+        @keyframes slideUp { to { transform: translateY(0); opacity: 1; } }
+
+        /* Theme Toggle (Top Right of Card) */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            left: 20px; /* Left because RTL */
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.3s, transform 0.3s;
         }
+        .theme-toggle:hover { color: var(--primary); transform: rotate(15deg); }
 
         .icon-header {
-            background: rgba(37, 99, 235, 0.1);
+            background: var(--shape-color);
             color: var(--primary);
             width: 80px;
             height: 80px;
@@ -64,17 +105,18 @@
             justify-content: center;
             margin: 0 auto 20px;
             font-size: 32px;
+            transition: background 0.3s, color 0.3s;
         }
 
         h2 {
-            color: #1e293b;
+            color: var(--text-main);
             font-size: 26px;
             margin-bottom: 8px;
-            font-weight: 700;
+            font-weight: 800;
         }
         
         p.subtitle {
-            color: #64748b;
+            color: var(--text-sub);
             margin-top: 0;
             margin-bottom: 30px;
             font-size: 14px;
@@ -90,15 +132,15 @@
             top: 50%;
             right: 15px;
             transform: translateY(-50%);
-            color: #94a3b8;
+            color: var(--text-sub);
             transition: color 0.3s;
         }
 
         input {
             width: 100%;
             padding: 16px 50px 16px 16px;
-            background-color: #f8fafc;
-            border: 2px solid #e2e8f0;
+            background-color: var(--input-bg);
+            border: 2px solid var(--input-border);
             border-radius: 12px;
             font-size: 16px;
             font-family: 'Tajawal', sans-serif;
@@ -106,13 +148,12 @@
             outline: none;
             transition: all 0.3s;
             text-align: right;
-            color: #334155;
+            color: var(--text-main);
         }
 
         input:focus {
-            background-color: white;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 4px var(--shape-color);
         }
 
         input:focus + i { color: var(--primary); }
@@ -120,7 +161,7 @@
         button {
             width: 100%;
             padding: 16px;
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: var(--primary);
             color: white;
             border: none;
             border-radius: 12px;
@@ -128,20 +169,18 @@
             font-weight: 700;
             cursor: pointer;
             font-family: 'Tajawal', sans-serif;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: background 0.3s, transform 0.2s;
             margin-top: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
         }
 
         button:hover {
+            background: var(--primary-hover);
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
         }
-
-        button:active { transform: translateY(0); }
 
         /* Loading Spinner */
         .spinner {
@@ -153,13 +192,12 @@
             border-top-color: white;
             animation: spin 1s ease-in-out infinite;
         }
-
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .error-message {
-            background: #fef2f2;
-            color: var(--error);
-            border: 1px solid #fee2e2;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
             padding: 12px;
             border-radius: 8px;
             font-size: 14px;
@@ -167,12 +205,7 @@
             display: none;
             animation: shake 0.5s;
         }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
     </style>
 </head>
 <body>
@@ -181,6 +214,10 @@
     <div class="bg-shape shape-2"></div>
 
     <div class="login-card">
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <i class="fa-solid fa-moon" id="themeIcon"></i>
+        </button>
+
         <div class="icon-header">
             <i class="fa-solid fa-user-doctor"></i>
         </div>
@@ -204,16 +241,49 @@
 
             <div id="error-msg" class="error-message">
                 <i class="fa-solid fa-circle-exclamation" style="margin-left:5px;"></i>
-                اسم المستخدم أو كلمة المرور غير صحيحة
+                خطأ في اسم المستخدم أو كلمة المرور
             </div>
         </form>
     </div>
 
     <script>
+        // --- THEME LOGIC ---
+        function initTheme() {
+            // Check LocalStorage or default to light
+            const saved = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+            updateThemeIcon(saved);
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const target = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', target);
+            localStorage.setItem('theme', target);
+            updateThemeIcon(target);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('themeIcon');
+            if(theme === 'dark') {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        }
+
+        // --- LOGIN LOGIC ---
         function validateLogin(e) {
             e.preventDefault();
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
+            
+            // Credentials
+            const VALID_USER = "abed";
+            const VALID_PASS = "1234";
+
+            const user = document.getElementById('username').value.trim(); // Trim whitespace
+            const pass = document.getElementById('password').value.trim();
             const btn = document.getElementById('loginBtn');
             const btnText = btn.querySelector('.btn-text');
             const spinner = btn.querySelector('.spinner');
@@ -225,20 +295,28 @@
             btnText.style.display = 'none';
             spinner.style.display = 'block';
 
-            // Simulate Network Request
+            // Simulate Network Request Delay
             setTimeout(() => {
-                if(user.length > 0 && pass.length > 0) {
-                    // Success
+                if(user === VALID_USER && pass === VALID_PASS) {
+                    // Success -> Redirect
                     window.location.href = "monitor.html";
                 } else {
-                    // Failure
+                    // Failure -> Show Error
                     btn.disabled = false;
                     btnText.style.display = 'block';
                     spinner.style.display = 'none';
                     errorMsg.style.display = 'block';
+                    
+                    // Shake animation reset trick
+                    errorMsg.style.animation = 'none';
+                    errorMsg.offsetHeight; /* trigger reflow */
+                    errorMsg.style.animation = 'shake 0.5s';
                 }
-            }, 1000); // Fake delay for realism
+            }, 800); 
         }
+
+        // Start
+        initTheme();
     </script>
 </body>
 </html>
