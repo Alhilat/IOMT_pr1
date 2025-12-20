@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>  تسجيل الدخول</title>
+    <title>تسجيل الدخول</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- THEME VARIABLES --- */
         :root {
-            /* Light Mode */
+            /* Default Light Mode Variables */
             --bg-grad-start: #f0f9ff;
             --bg-grad-end: #cbebff;
             --card-bg: rgba(255, 255, 255, 0.85);
@@ -20,10 +20,11 @@
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
             --shape-color: rgba(37, 99, 235, 0.1);
+            --toggle-bg: rgba(0, 0, 0, 0.05); /* New variable for toggle button */
         }
 
         [data-theme="dark"] {
-            /* Dark Mode */
+            /* Dark Mode Variables */
             --bg-grad-start: #0f172a;
             --bg-grad-end: #1e293b;
             --card-bg: rgba(30, 41, 59, 0.85);
@@ -34,6 +35,7 @@
             --primary: #3b82f6;
             --primary-hover: #2563eb;
             --shape-color: rgba(59, 130, 246, 0.1);
+            --toggle-bg: rgba(255, 255, 255, 0.1);
         }
 
         body {
@@ -80,19 +82,58 @@
 
         @keyframes slideUp { to { transform: translateY(0); opacity: 1; } }
 
-        /* Theme Toggle (Top Right of Card) */
-        .theme-toggle {
+        /* --- UPDATED THEME TOGGLE STYLES --- */
+        .theme-toggle-wrapper {
             position: absolute;
             top: 20px;
-            left: 20px; /* Left because RTL */
-            background: transparent;
-            border: none;
-            color: var(--text-sub);
-            font-size: 20px;
-            cursor: pointer;
-            transition: color 0.3s, transform 0.3s;
+            left: 20px;
+            z-index: 10;
         }
-        .theme-toggle:hover { color: var(--primary); transform: rotate(15deg); }
+
+        .theme-toggle {
+            background: var(--toggle-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-sub);
+            width: 45px;       /* Increased Size */
+            height: 45px;      /* Increased Size */
+            font-size: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;     /* Center the icon */
+            align-items: center;
+            justify-content: center;
+            margin: 0;         /* Reset margin */
+            padding: 0;
+        }
+
+        .theme-toggle:hover {
+            color: var(--primary);
+            background: var(--shape-color);
+            transform: rotate(15deg) scale(1.1);
+            border-color: var(--primary);
+        }
+
+        /* CSS Tooltip (The Hint) */
+        .theme-toggle-wrapper:hover::after {
+            content: "تغيير المظهر"; /* The hint text */
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-main);
+            color: var(--card-bg);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes fadeIn { to { opacity: 1; transform: translateX(-50%) translateY(-5px); } }
+        /* ----------------------------------- */
 
         .icon-header {
             background: var(--shape-color);
@@ -158,7 +199,7 @@
 
         input:focus + i { color: var(--primary); }
 
-        button {
+        button.login-btn {
             width: 100%;
             padding: 16px;
             background: var(--primary);
@@ -176,7 +217,7 @@
             align-items: center;
         }
 
-        button:hover {
+        button.login-btn:hover {
             background: var(--primary-hover);
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
@@ -214,9 +255,11 @@
     <div class="bg-shape shape-2"></div>
 
     <div class="login-card">
-        <button class="theme-toggle" onclick="toggleTheme()">
-            <i class="fa-solid fa-moon" id="themeIcon"></i>
-        </button>
+        <div class="theme-toggle-wrapper">
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="تغيير المظهر">
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+        </div>
 
         <div class="icon-header">
             <i class="fa-solid fa-user-doctor"></i>
@@ -234,7 +277,7 @@
                 <i class="fa-solid fa-lock"></i>
             </div>
             
-            <button type="submit" id="loginBtn">
+            <button type="submit" id="loginBtn" class="login-btn">
                 <span class="btn-text">دخول</span>
                 <div class="spinner"></div>
             </button>
@@ -249,8 +292,8 @@
     <script>
         // --- THEME LOGIC ---
         function initTheme() {
-            // Check LocalStorage or default to light
-            const saved = localStorage.getItem('theme') || 'light';
+            // EDITED: Changed default fallback from 'light' to 'dark'
+            const saved = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', saved);
             updateThemeIcon(saved);
         }
@@ -282,7 +325,7 @@
             const VALID_USER = "abed";
             const VALID_PASS = "1234";
 
-            const user = document.getElementById('username').value.trim(); // Trim whitespace
+            const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
             const btn = document.getElementById('loginBtn');
             const btnText = btn.querySelector('.btn-text');

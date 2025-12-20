@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ICU Monitor | Live Vitals</title>
+    <title>ICU Monitor | Medical Guide</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,6 +17,7 @@
             --text-main: #0f172a;
             --text-sub: #64748b;
             --chart-grid: #f1f5f9;
+            --modal-overlay: rgba(15, 23, 42, 0.6);
             
             /* Medical Colors */
             --heart: #ef4444;
@@ -24,6 +25,11 @@
             --temp: #f59e0b;
             --env: #10b981;
             --hum: #8b5cf6;
+
+            /* Severity Colors */
+            --status-norm: #10b981;
+            --status-warn: #f59e0b;
+            --status-crit: #ef4444;
         }
 
         [data-theme="dark"] {
@@ -33,6 +39,7 @@
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
             --chart-grid: #334155;
+            --modal-overlay: rgba(0, 0, 0, 0.8);
         }
 
         * { box-sizing: border-box; }
@@ -42,7 +49,7 @@
             background-color: var(--bg);
             color: var(--text-main);
             margin: 0;
-            padding-bottom: 40px; /* Space for scroll on mobile */
+            padding-bottom: 40px; 
             transition: background-color 0.3s, color 0.3s;
             -webkit-tap-highlight-color: transparent;
         }
@@ -69,7 +76,6 @@
             white-space: nowrap;
         }
         .brand i { color: var(--oxy); }
-        .brand span { display: block; }
 
         .nav-controls { display: flex; align-items: center; gap: 10px; }
 
@@ -140,13 +146,13 @@
         /* --- Responsive Grids --- */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr); /* Desktop: 5 in a row */
+            grid-template-columns: repeat(5, 1fr);
             gap: 1rem;
         }
 
         .critical-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* Desktop: 3 side by side */
+            grid-template-columns: repeat(3, 1fr);
             gap: 1.5rem;
         }
 
@@ -166,27 +172,149 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
+            min-height: 160px; 
+            transition: transform 0.2s, box-shadow 0.2s;
         }
+        
+        /* Side Status Bar */
         .stat-card::after {
             content: '';
             position: absolute;
             top: 0; left: 0; bottom: 0;
             width: 4px;
-            background: var(--color);
+            background: var(--card-status-color, var(--text-sub)); 
+            transition: background 0.3s;
         }
 
-        .stat-label { font-size: 0.7rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; margin-bottom: 4px; }
-        .stat-val-group { display: flex; align-items: baseline; gap: 0.25rem; }
-        .stat-val { font-size: 1.75rem; font-weight: 800; color: var(--text-main); line-height: 1; }
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .stat-label { 
+            font-size: 0.7rem; 
+            font-weight: 700; 
+            color: var(--text-sub); 
+            text-transform: uppercase; 
+        }
+
+        /* Medical Status Tag */
+        .med-tag {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            background: var(--bg);
+            color: var(--text-sub);
+        }
+
+        .stat-val-group { display: flex; align-items: baseline; gap: 0.25rem; margin: 10px 0; }
+        .stat-val { font-size: 2rem; font-weight: 800; color: var(--text-main); line-height: 1; }
         .stat-unit { font-size: 0.75rem; font-weight: 600; color: var(--text-sub); }
 
-        .alert-mode {
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-            border-color: var(--heart);
-            box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.1);
+        /* Reference Range Footer with Info Button */
+        .stat-footer {
+            font-size: 0.7rem;
+            color: var(--text-sub);
+            border-top: 1px solid var(--surface-border);
+            padding-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Space for button */
         }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        
+        .info-btn {
+            background: var(--bg);
+            border: 1px solid var(--surface-border);
+            color: var(--primary);
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        .info-btn:hover { background: var(--surface-border); }
+
+        /* Severity Classes */
+        .state-critical { --card-status-color: var(--status-crit); }
+        .state-warning  { --card-status-color: var(--status-warn); }
+        .state-normal   { --card-status-color: var(--status-norm); }
+
+        .state-critical .med-tag { background: rgba(239, 68, 68, 0.1); color: var(--status-crit); }
+        .state-warning .med-tag  { background: rgba(245, 158, 11, 0.1); color: var(--status-warn); }
+        .state-normal .med-tag   { background: rgba(16, 185, 129, 0.1); color: var(--status-norm); }
+
+        .alert-animation { animation: pulse-red 1.5s infinite; }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* --- MODAL (Medical Guide) --- */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 200; 
+            left: 0; top: 0;
+            width: 100%; height: 100%; 
+            background-color: var(--modal-overlay);
+            backdrop-filter: blur(5px);
+            align-items: center; justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: var(--surface);
+            margin: auto;
+            padding: 0;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--surface-border);
+            overflow: hidden;
+            animation: slideUp 0.3s;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--surface-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg);
+        }
+        .modal-header h3 { margin: 0; font-size: 1.2rem; color: var(--text-main); display: flex; gap:10px; align-items: center; }
+        
+        .close-btn {
+            background: none; border: none; font-size: 1.5rem; color: var(--text-sub); cursor: pointer;
+        }
+
+        .modal-body { padding: 1.5rem; }
+        
+        .guide-section { margin-bottom: 1.5rem; }
+        .guide-section:last-child { margin-bottom: 0; }
+        .guide-title { 
+            font-size: 0.8rem; font-weight: 700; color: var(--text-sub); 
+            text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;
+        }
+        .guide-text { font-size: 0.95rem; line-height: 1.6; color: var(--text-main); }
+        .guide-list { margin: 0; padding-left: 1.2rem; }
+        .guide-list li { margin-bottom: 0.5rem; }
+
+        .modal-status-badge {
+            display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; margin-left: 10px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         /* --- Charts --- */
         .chart-box {
@@ -194,49 +322,22 @@
             border-radius: 12px;
             padding: 1rem;
             border: 1px solid var(--surface-border);
-            height: 300px; /* Default height */
+            height: 300px;
             display: flex;
             flex-direction: column;
         }
-        .chart-title {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--text-main);
-            margin-bottom: 0.75rem;
-        }
+        .chart-title { font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem; }
         .canvas-wrapper { flex: 1; position: relative; width: 100%; overflow: hidden; }
 
-
-        /* --- MOBILE OPTIMIZATIONS --- */
+        /* --- MOBILE --- */
         @media (max-width: 768px) {
             .navbar { padding: 0.75rem 1rem; }
-            .brand span { display: none; } /* Hide text on very small screens, keep icon */
-            .brand::after { content: 'MediGuard'; display: block; } /* Use shorter name */
-            
-            .dashboard { padding: 0 1rem; gap: 1.5rem; margin: 1rem auto; }
-            
-            /* Make top stats 2 per row instead of 1 long list */
-            .stats-grid { 
-                grid-template-columns: 1fr 1fr; 
-                gap: 0.75rem;
-            }
-            /* Make the last odd card span full width */
+            .brand span { display: none; }
+            .brand::after { content: 'MediGuard'; display: block; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
             .stat-card:last-child { grid-column: span 2; }
-
-            /* Stack charts nicely */
-            .critical-grid, .env-grid { grid-template-columns: 1fr; gap: 1rem; }
-            
-            /* Slightly shorter charts on mobile to save vertical space */
-            .chart-box { height: 260px; padding: 0.75rem; }
-            
-            /* Adjust fonts */
-            .stat-val { font-size: 1.5rem; }
-        }
-        
-        @media (min-width: 769px) and (max-width: 1200px) {
-            .stats-grid { grid-template-columns: repeat(3, 1fr); }
-            .critical-grid { grid-template-columns: 1fr 1fr; } 
-            .chart-box:nth-child(3) { grid-column: span 2; } /* Body temp spans on medium screens */
+            .critical-grid, .env-grid { grid-template-columns: 1fr; }
+            .chart-box { height: 260px; }
         }
     </style>
 </head>
@@ -264,41 +365,92 @@
         <div>
             <div class="section-header"><i class="fa-solid fa-grip"></i> Vitals Overview</div>
             <div class="stats-grid">
-                <div class="stat-card" id="card-hr" style="--color: var(--heart)">
-                    <div class="stat-label">Heart Rate</div>
+                
+                <div class="stat-card" id="card-hr">
+                    <div class="stat-header">
+                        <div class="stat-label">Heart Rate</div>
+                        <div id="msg-hr" class="med-tag">--</div>
+                    </div>
                     <div class="stat-val-group">
                         <div class="stat-val" id="hr">--</div>
                         <div class="stat-unit">BPM</div>
                     </div>
+                    <div class="stat-footer">
+                        <span>Range: 60 - 100</span>
+                        <button class="info-btn" onclick="openMedicalGuide('hr')">
+                            <i class="fa-solid fa-user-nurse"></i> Guide
+                        </button>
+                    </div>
                 </div>
-                <div class="stat-card" id="card-o2" style="--color: var(--oxy)">
-                    <div class="stat-label">SpO2</div>
+
+                <div class="stat-card" id="card-o2">
+                    <div class="stat-header">
+                        <div class="stat-label">SpO2</div>
+                        <div id="msg-o2" class="med-tag">--</div>
+                    </div>
                     <div class="stat-val-group">
                         <div class="stat-val" id="o2">--</div>
                         <div class="stat-unit">%</div>
                     </div>
+                    <div class="stat-footer">
+                        <span>Target: > 95%</span>
+                        <button class="info-btn" onclick="openMedicalGuide('o2')">
+                            <i class="fa-solid fa-user-nurse"></i> Guide
+                        </button>
+                    </div>
                 </div>
-                <div class="stat-card" id="card-bodyT" style="--color: var(--temp)">
-                    <div class="stat-label">Body Temp</div>
+
+                <div class="stat-card" id="card-bodyT">
+                    <div class="stat-header">
+                        <div class="stat-label">Body Temp</div>
+                        <div id="msg-bodyT" class="med-tag">--</div>
+                    </div>
                     <div class="stat-val-group">
                         <div class="stat-val" id="bodyT">--</div>
                         <div class="stat-unit">°C</div>
                     </div>
+                    <div class="stat-footer">
+                        <span>Range: 36.5-37.5</span>
+                        <button class="info-btn" onclick="openMedicalGuide('bodyT')">
+                            <i class="fa-solid fa-user-nurse"></i> Guide
+                        </button>
+                    </div>
                 </div>
-                <div class="stat-card" id="card-roomT" style="--color: var(--env)">
-                    <div class="stat-label">Room Temp</div>
+
+                <div class="stat-card" id="card-roomT">
+                    <div class="stat-header">
+                        <div class="stat-label">Room Temp</div>
+                        <div id="msg-roomT" class="med-tag">--</div>
+                    </div>
                     <div class="stat-val-group">
                         <div class="stat-val" id="roomT">--</div>
                         <div class="stat-unit">°C</div>
                     </div>
+                    <div class="stat-footer">
+                        <span>Opt: 20-24</span>
+                        <button class="info-btn" onclick="openMedicalGuide('roomT')">
+                            <i class="fa-solid fa-user-nurse"></i> Guide
+                        </button>
+                    </div>
                 </div>
-                <div class="stat-card" id="card-hum" style="--color: var(--hum)">
-                    <div class="stat-label">Humidity</div>
+
+                <div class="stat-card" id="card-hum">
+                    <div class="stat-header">
+                        <div class="stat-label">Humidity</div>
+                        <div id="msg-hum" class="med-tag">--</div>
+                    </div>
                     <div class="stat-val-group">
                         <div class="stat-val" id="hum">--</div>
                         <div class="stat-unit">%</div>
                     </div>
+                    <div class="stat-footer">
+                        <span>Opt: 30-60%</span>
+                        <button class="info-btn" onclick="openMedicalGuide('hum')">
+                            <i class="fa-solid fa-user-nurse"></i> Guide
+                        </button>
+                    </div>
                 </div>
+
             </div>
         </div>
 
@@ -336,8 +488,147 @@
 
     </div>
 
+    <div id="medModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Medical Guide</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                </div>
+        </div>
+    </div>
+
     <script>
-        // --- THEME ---
+        // --- GLOBAL VARIABLES TO STORE CURRENT DATA ---
+        let currentData = { hr: 0, o2: 0, bodyT: 0, roomT: 0, hum: 0 };
+
+        // --- MEDICAL ADVICE DATABASE ---
+        const medicalGuideData = {
+            hr: {
+                title: "Heart Rate (BPM)",
+                low: {
+                    condition: "Bradycardia (<60 BPM)",
+                    details: "Heart rate is slower than normal. Common in athletes but can indicate heart block or medication overdose.",
+                    action: ["Check patient responsiveness and airway.", "Review medications (Beta-blockers?).", "Prepare for potential atropine administration if symptomatic."],
+                    care: "Keep patient warm and monitor BP frequently."
+                },
+                high: {
+                    condition: "Tachycardia (>100 BPM)",
+                    details: "Heart rate is faster than normal. Can be caused by fever, pain, anxiety, or dehydration.",
+                    action: ["Assess for pain or fever.", "Check for signs of dehydration (IV fluids?).", "Obtain a 12-lead ECG if irregular."],
+                    care: "Reduce environmental stress, reassure patient, treat underlying fever/pain."
+                },
+                normal: {
+                    condition: "Normal Sinus Rhythm",
+                    details: "Heart rate is within the healthy range (60-100 BPM).",
+                    action: ["Continue routine monitoring.", "Documentation of vitals every 4 hours."],
+                    care: "Maintain comfortable environment."
+                }
+            },
+            o2: {
+                title: "SpO2 Saturation (%)",
+                low: {
+                    condition: "Hypoxia (<95%)",
+                    details: "Insufficient oxygen reaching the tissues. Critical if below 90%.",
+                    action: ["Check sensor placement (cold fingers?).", "Sit patient upright (High Fowler's).", "Administer supplementary oxygen as per protocol."],
+                    care: "Encourage deep breathing and coughing exercises."
+                },
+                normal: {
+                    condition: "Normal Saturation",
+                    details: "Oxygen levels are adequate (>95%).",
+                    action: ["Continue monitoring.", "Wean oxygen if applicable and stable."],
+                    care: "Ensure sensor is rotated every few hours to prevent pressure sores."
+                }
+            },
+            bodyT: {
+                title: "Body Temperature (°C)",
+                low: {
+                    condition: "Hypothermia (<36°C)",
+                    details: "Core temperature dropped below normal.",
+                    action: ["Apply warm blankets.", "Monitor for cardiac arrhythmias.", "Administer warm IV fluids if indicated."],
+                    care: "Keep patient covered and dry."
+                },
+                high: {
+                    condition: "Pyrexia / Fever (>37.5°C)",
+                    details: "Elevated body temperature indicating potential infection or inflammation.",
+                    action: ["Administer antipyretics (Paracetamol) if prescribed.", "Blood cultures if sepsis suspected.", "Check surgical wounds."],
+                    care: "Apply cool compresses, encourage fluids, lightweight clothing."
+                },
+                normal: {
+                    condition: "Afebrile",
+                    details: "Temperature is within normal limits.",
+                    action: ["Routine monitoring."],
+                    care: "Standard comfort care."
+                }
+            },
+            roomT: { title: "Room Temperature", normal: { condition: "Normal", details: "Environment is comfortable.", action: ["No action needed."], care: "Maintain setting." } },
+            hum: { title: "Humidity", normal: { condition: "Normal", details: "Humidity is acceptable.", action: ["No action needed."], care: "Maintain setting." } }
+        };
+
+        // --- MODAL LOGIC ---
+        function openMedicalGuide(type) {
+            const val = currentData[type];
+            const data = medicalGuideData[type];
+            let guide = data.normal;
+            let statusColor = "var(--env)"; // Green default
+
+            // Determine status based on value (Reuse similar logic to analyzeVital)
+            if(type === 'hr') {
+                if(val < 60) { guide = data.low; statusColor = "var(--heart)"; }
+                else if(val > 100) { guide = data.high; statusColor = "var(--heart)"; }
+            } else if (type === 'o2') {
+                if(val < 95) { guide = data.low; statusColor = "var(--oxy)"; }
+            } else if (type === 'bodyT') {
+                if(val < 36.0) { guide = data.low; statusColor = "var(--temp)"; }
+                else if(val > 37.5) { guide = data.high; statusColor = "var(--heart)"; }
+            }
+
+            // Fallback for environmental (simplified)
+            if(type === 'roomT' || type === 'hum') {
+                guide = { condition: "Environmental Control", details: "Current Level: " + val, action: ["Adjust AC/Humidifier if patient is uncomfortable."], care: "Ask patient for preference." };
+            }
+
+            // Build HTML
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.innerHTML = `<i class="fa-solid fa-user-doctor"></i> ${data.title} <span class="modal-status-badge" style="background:${statusColor}; color:#fff">${guide.condition}</span>`;
+            
+            let actionList = guide.action.map(a => `<li>${a}</li>`).join('');
+
+            modalBody.innerHTML = `
+                <div class="guide-section">
+                    <div class="guide-title">Clinical Significance</div>
+                    <div class="guide-text">${guide.details}</div>
+                </div>
+                <div class="guide-section">
+                    <div class="guide-title" style="color:var(--heart)">Immediate Action Required</div>
+                    <ul class="guide-list guide-text">
+                        ${actionList}
+                    </ul>
+                </div>
+                <div class="guide-section">
+                    <div class="guide-title" style="color:var(--env)">Patient Care & Comfort</div>
+                    <div class="guide-text">${guide.care}</div>
+                </div>
+            `;
+
+            document.getElementById('medModal').style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById('medModal').style.display = "none";
+        }
+
+        // Close on outside click
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('medModal')) {
+                closeModal();
+            }
+        }
+
+        // --- EXISTING LOGIC ---
         function initTheme() {
             const saved = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', saved);
@@ -371,7 +662,37 @@
         }
         initTheme();
 
-        // --- APP LOGIC ---
+        function analyzeVital(type, val) {
+            val = Number(val);
+            let result = { state: 'state-normal', text: 'Normal' };
+            switch(type) {
+                case 'hr':
+                    if (val < 50) return { state: 'state-critical', text: 'Bradycardia' };
+                    if (val < 60) return { state: 'state-warning', text: 'Low' };
+                    if (val > 120) return { state: 'state-critical', text: 'Tachycardia' };
+                    if (val > 100) return { state: 'state-warning', text: 'Elevated' };
+                    break;
+                case 'o2':
+                    if (val < 90) return { state: 'state-critical', text: 'Hypoxia' };
+                    if (val < 95) return { state: 'state-warning', text: 'Low' };
+                    break;
+                case 'bodyT':
+                    if (val > 39.0) return { state: 'state-critical', text: 'High Fever' };
+                    if (val > 37.5) return { state: 'state-warning', text: 'Febrile' };
+                    if (val < 35.0) return { state: 'state-critical', text: 'Hypothermia' };
+                    if (val < 36.0) return { state: 'state-warning', text: 'Low' };
+                    break;
+                case 'roomT':
+                    if (val > 28 || val < 16) return { state: 'state-warning', text: 'Check AC' };
+                    break;
+                case 'hum':
+                    if (val > 70) return { state: 'state-warning', text: 'Damp' };
+                    if (val < 25) return { state: 'state-warning', text: 'Dry' };
+                    break;
+            }
+            return result;
+        }
+
         const URL = "https://script.google.com/macros/s/AKfycbwGq4ITi13n3Hs8m_eKaFbI3MgsCgobmMAJdo0KuWEwPrsva1YsWCqNk3RiDSLvqppF/exec";
         const chartConfig = {
             hr:    { id: 'chart-hr',    color: '#ef4444' },
@@ -395,17 +716,22 @@
 
                 const last = data[data.length - 1];
                 if(last) {
-                    document.getElementById('hr').innerText = last.hr;
-                    document.getElementById('o2').innerText = last.o2;
-                    document.getElementById('bodyT').innerText = Number(last.bodyT).toFixed(1);
-                    document.getElementById('roomT').innerText = Number(last.roomT).toFixed(1);
-                    document.getElementById('hum').innerText = last.hum;
-                    checkAlerts(last);
+                    // Update Global State for Modal
+                    currentData.hr = last.hr;
+                    currentData.o2 = last.o2;
+                    currentData.bodyT = last.bodyT;
+                    currentData.roomT = last.roomT;
+                    currentData.hum = last.hum;
+
+                    updateCard('hr', last.hr);
+                    updateCard('o2', last.o2);
+                    updateCard('bodyT', Number(last.bodyT).toFixed(1));
+                    updateCard('roomT', Number(last.roomT).toFixed(1));
+                    updateCard('hum', last.hum);
                 }
 
-                const rec = data.slice(-20); // Last 20 points
+                const rec = data.slice(-20); 
                 const labels = rec.map(d => new Date(d.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
-                
                 Object.keys(chartConfig).forEach(k => drawChart(k, labels, rec.map(d => d[k])));
 
             } catch(e) {
@@ -415,11 +741,15 @@
             }
         }
 
-        function checkAlerts(d) {
-            const toggle = (id, cond) => document.getElementById(id).classList.toggle('alert-mode', cond);
-            toggle('card-hr', d.hr > 110 || d.hr < 50);
-            toggle('card-o2', d.o2 < 90);
-            toggle('card-bodyT', d.bodyT > 37.5);
+        function updateCard(type, val) {
+            document.getElementById(type).innerText = val;
+            const analysis = analyzeVital(type, val);
+            const card = document.getElementById('card-' + type);
+            const msg = document.getElementById('msg-' + type);
+            card.classList.remove('state-normal', 'state-warning', 'state-critical', 'alert-animation');
+            card.classList.add(analysis.state);
+            msg.innerText = analysis.text;
+            if(analysis.state === 'state-critical') { card.classList.add('alert-animation'); }
         }
 
         function drawChart(key, lbls, vals) {
@@ -434,7 +764,7 @@
                 chartInstances[key].update();
             } else {
                 const grad = ctx.createLinearGradient(0, 0, 0, 300);
-                grad.addColorStop(0, cfg.color + '40'); // Hex + 40 alpha
+                grad.addColorStop(0, cfg.color + '40'); 
                 grad.addColorStop(1, cfg.color + '00');
 
                 chartInstances[key] = new Chart(ctx, {
